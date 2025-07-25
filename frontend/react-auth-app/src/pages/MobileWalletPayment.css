@@ -1,0 +1,210 @@
+.payment-container {
+  background: #181A1B;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 8px;
+}
+
+.payment-card {
+  background: #232526;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.4);
+  padding: 40px 32px;
+  max-width: 400px;
+  width: 100%;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.payment-header {
+  text-align: center;
+}
+
+.payment-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.payment-subtitle {
+  color: #ccc;
+  font-size: 1rem;
+}
+
+.payment-amount-box {
+  background: #1a1a1a;
+  border-left: 4px solid #ff9800;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.payment-amount-label {
+  color: #ccc;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.payment-amount-value {
+  color: #ff9800;
+  font-size: 1.7rem;
+  font-weight: bold;
+}
+
+.payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.payment-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.payment-label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.payment-input {
+  background: #232526;
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 1.1rem;
+  margin-top: 4px;
+  margin-bottom: 2px;
+  transition: border 0.2s;
+}
+.payment-input:focus {
+  outline: none;
+  border: 1.5px solid #ff9800;
+}
+
+.payment-wallet-types {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 1rem;
+}
+.wallet-type {
+  font-size: 1rem;
+  font-weight: 500;
+}
+.wallet-type.vodafone { color: #2196f3; }
+.wallet-type.orange { color: #ff9800; }
+.wallet-type.etisalat { color: #4caf50; }
+
+.payment-wallet-hint {
+  color: #aaa;
+  font-size: 0.95rem;
+  margin-top: 2px;
+}
+
+.payment-error-box {
+  background: #2a2a2a;
+  border: 1px solid #ff5252;
+  color: #ff5252;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+}
+.payment-error-icon {
+  font-size: 1.2rem;
+}
+
+.btn {
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  outline: none;
+  margin-top: 8px;
+}
+.btn-primary {
+  background: linear-gradient(90deg, #ff9800 0%, #ffb347 100%);
+  color: #222;
+  width: 100%;
+}
+.btn-outline {
+  background: transparent;
+  color: #ff9800;
+  border: 2px solid #ff9800;
+  margin-top: 0;
+}
+.btn:disabled, .btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.payment-loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.spinner {
+  width: 22px;
+  height: 22px;
+  margin-right: 6px;
+  animation: spin 1s linear infinite;
+}
+
+.payment-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 18px;
+}
+.payment-back-btn {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.payment-how-it-works {
+  background: #1a1a1a;
+  border: 1px solid #ff9800;
+  border-radius: 8px;
+  padding: 14px 18px;
+  color: #ff9800;
+  font-size: 1rem;
+  text-align: left;
+}
+.payment-how-title {
+  font-weight: bold;
+  color: #ff9800;
+  margin-bottom: 6px;
+}
+.payment-how-list {
+  color: #fff;
+  font-size: 0.98rem;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.payment-error-title {
+  color: #ff5252;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.payment-error-message {
+  color: #fff;
+  font-size: 1rem;
+} 

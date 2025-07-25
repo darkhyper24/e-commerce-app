@@ -1,0 +1,87 @@
+services:
+# run the frontend
+  frontend:
+    build:
+      context: ./frontend/react-auth-app
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+# run the backend and setup enviroment variables
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+
+
+
+    environment:
+      - DB_USER=postgres
+      - DB_HOST=postgres
+      - DB_NAME=e-commerce
+      - DB_PASSWORD=admin
+      - DB_PORT=5432
+      - PORT=4000
+      - DATABASE_URL=postgresql://postgres:admin@postgres:5432/e-commerce
+      - ACCESS_TOKEN_EXPIRY=15m
+      - REFRESH_TOKEN_EXPIRY=7d
+      - CLIENT_URL=http://localhost:8080
+      - NODE_ENV=development
+      - ACCESS_TOKEN_SECRET=3a81f576c8d2046282ae969b05d2aa3be9de9438f9a9e48c7fe4f83cb8126ca04dcaf416830656e71f49e39103e4b5fe3fc0e8db8a1a673ff39bd1c7bbb45396
+      - REFRESH_TOKEN_SECRET=e0bf7d1cb5cbe40ea5ef10de9ecd2c5f3fa3b5cf20e7bfe1a23a9626aabbb6a6b2cbada2bb37b15f0ccb3f1dd518b29ce78f39c3c3e85a5d66a77831edfc17ba
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    volumes:
+    - ./backend/docker-entrypoint.sh:/docker-entrypoint.sh
+    command: ["sh", "/home/node/code/docker-entrypoint.sh"]
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=e-commerce
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  redis:
+    image: redis:alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
+# communication between services
+networks:
+  app-network:
+    driver: bridge
+
+# volumes for persistent data(the data will not be lost when the container is stopped)
+volumes:
+  postgres_data:
+  redis_data:
