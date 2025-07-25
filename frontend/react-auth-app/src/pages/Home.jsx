@@ -2,18 +2,15 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 
 const Home = () => {
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [logoutError, setLogoutError] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
-  const { setUser } = useAuth();
 
   // Fetch products from API
   useEffect(() => {
@@ -63,17 +60,6 @@ const Home = () => {
     fetchProducts();
   }, [selectedCategory]);
 
-  const handleLogout = async () => {
-    setLogoutError('');
-    try {
-      await axios.post('/api/auth/logout', {}, { withCredentials: true });
-      setUser(null);
-      navigate('/login');
-    } catch (err) {
-      setLogoutError('Logout failed. Please try again.');
-    }
-  };
-
   const handleViewProduct = (productId) => {
     navigate(`/products?id=${productId}`);
   };
@@ -89,10 +75,7 @@ const Home = () => {
 
   return (
     <div style={{ background: '#181A1B', minHeight: '100vh' }}>
-      <Navbar onSearch={setSearch} onLogout={handleLogout} />
-      {logoutError && (
-        <div style={{ color: '#ff5252', textAlign: 'center', marginTop: 16 }}>{logoutError}</div>
-      )}
+      <Navbar onSearch={setSearch} />
       
       <section style={heroStyle}>
         <div>

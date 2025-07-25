@@ -2,11 +2,25 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.PNG';
 import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 import './Navbar.css';
 
-const Navbar = ({ onSearch, onLogout }) => {
-  const { isAuthenticated } = useAuth();
+const Navbar = ({ onSearch }) => {
+  const { isAuthenticated, setUser } = useAuth();
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await axios.post('/api/auth/logout', {}, { withCredentials: true });
+      setUser(null);
+      navigate('/login');
+    } catch (err) {
+      console.error('Logout error:', err);
+      // Still clear user state even if API call fails
+      setUser(null);
+      navigate('/login');
+    }
+  };
 
   return (
     <nav style={navStyle}>
@@ -31,7 +45,7 @@ const Navbar = ({ onSearch, onLogout }) => {
         <Link to="/about" className="nav-link">About</Link>
         <Link to="/faqs" className="nav-link">FAQs</Link>
         {isAuthenticated ? (
-          <button onClick={onLogout} style={logoutBtnStyle}>Logout</button>
+          <button onClick={handleLogout} style={logoutBtnStyle}>Logout</button>
         ) : (
           <button onClick={() => navigate('/login')} style={loginBtnStyle}>Login</button>
         )}

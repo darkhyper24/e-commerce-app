@@ -9,5 +9,5 @@ router.post("/register", hashPasswordMiddleware, authController.register);
 router.post("/refresh-token", authController.refreshToken);
 router.post("/logout", authController.logout);
 router.get("/profile", authenticateToken, authController.profile);
-
+router.put("/profile", authenticateToken, authController.updateProfile);
 module.exports = router;

@@ -2,44 +2,43 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../contexts/AuthContext';
+import { updateUserProfile } from '../api/profileApi';
 import axios from 'axios';
 
 const Profile = () => {
   const { isAuthenticated, user, setUser } = useAuth();
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
-  const [orderHistory, setOrderHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    username: '',
+    email: '',
+    phone: ''
+  });
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateError, setUpdateError] = useState('');
+  const [updateSuccess, setUpdateSuccess] = useState('');
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
         
-        // Use the documented profile endpoint to get user data
         const profileResponse = await axios.get('/api/auth/profile', {
           withCredentials: true
         });
         
         if (profileResponse.data && profileResponse.data.user) {
           setUserData(profileResponse.data.user);
-          setUser(profileResponse.data.user); // Update auth context
-          
-          // Now fetch orders for this user
-          try {
-            // Use the correct endpoint for order history
-            const ordersResponse = await axios.get(`/api/orders/history`, {
-              withCredentials: true
-            });
-            
-            if (ordersResponse.data && ordersResponse.data.data) {
-              setOrderHistory(ordersResponse.data.data);
-            }
-          } catch (orderErr) {
-            console.warn('Could not fetch orders:', orderErr);
-            setOrderHistory([]);
-          }
+          setUser(profileResponse.data.user);
+          // Initialize edit form with current data
+          setEditForm({
+            username: profileResponse.data.user.username || '',
+            email: profileResponse.data.user.email || '',
+            phone: profileResponse.data.user.phone || ''
+          });
         } else {
           setError('Unexpected response format from server');
         }
@@ -64,13 +63,53 @@ const Profile = () => {
     }
   }, [isAuthenticated, setUser]);
 
-  const handleLogout = async () => {
+  const handleEditClick = () => {
+    setIsEditing(true);
+    setUpdateError('');
+    setUpdateSuccess('');
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setUpdateError('');
+    setUpdateSuccess('');
+    // Reset form to original data
+    setEditForm({
+      username: userData?.username || '',
+      email: userData?.email || '',
+      phone: userData?.phone || ''
+    });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setUpdateError('');
+    setUpdateSuccess('');
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setUpdateLoading(true);
+    setUpdateError('');
+    setUpdateSuccess('');
+
     try {
-      await axios.post('/api/auth/logout', {}, { withCredentials: true });
-      setUser(null);
-      navigate('/login');
+      const response = await updateUserProfile(editForm);
+      
+      if (response.user) {
+        setUserData(response.user);
+        setUser(response.user);
+        setUpdateSuccess('Profile updated successfully!');
+        setIsEditing(false);
+      }
     } catch (err) {
-      console.error('Logout error:', err);
+      setUpdateError(err.message);
+    } finally {
+      setUpdateLoading(false);
     }
   };
 
@@ -78,7 +117,7 @@ const Profile = () => {
   if (!isAuthenticated) {
     return (
       <div style={{ background: '#181A1B', minHeight: '100vh' }}>
-        <Navbar onSearch={() => {}} onLogout={handleLogout} />
+        <Navbar onSearch={() => {}} />
         <div style={unauthContainerStyle}>
           <h1 style={{ color: '#ff9800', fontSize: 36, marginBottom: 24 }}>Profile</h1>
           <div style={unauthMessageStyle}>
@@ -107,7 +146,7 @@ const Profile = () => {
 
   return (
     <div style={{ background: '#181A1B', minHeight: '100vh' }}>
-      <Navbar onSearch={() => {}} onLogout={handleLogout} />
+      <Navbar onSearch={() => {}} />
       <div style={containerStyle}>
         <h1 style={{ color: '#ff9800', fontSize: 36, marginBottom: 24 }}>My Profile</h1>
         
@@ -125,80 +164,96 @@ const Profile = () => {
             <div style={sectionStyle}>
               <h2 style={sectionTitleStyle}>Personal Information</h2>
               <div style={cardStyle}>
-                <div style={infoRowStyle}>
-                  <div style={infoLabelStyle}>Username</div>
-                  <div style={infoValueStyle}>{userData?.username || 'Not set'}</div>
-                </div>
-                <div style={infoRowStyle}>
-                  <div style={infoLabelStyle}>Email</div>
-                  <div style={infoValueStyle}>{userData?.email || 'Not set'}</div>
-                </div>
-                <div style={infoRowStyle}>
-                  <div style={infoLabelStyle}>Phone</div>
-                  <div style={infoValueStyle}>{userData?.phone || 'Not set'}</div>
-                </div>
-               
-                <button 
-                  style={editBtnStyle}
-                >
-                  Edit Profile
-                </button>
-              </div>
-            </div>
-
-            {/* Order History Section */}
-            <div style={sectionStyle}>
-              <h2 style={sectionTitleStyle}>Order History</h2>
-              {orderHistory.length === 0 ? (
-                <div style={emptyStateStyle}>
-                  You haven't placed any orders yet.
-                </div>
-              ) : (
-                orderHistory.map(order => (
-                  <div key={order.id} style={orderCardStyle}>
-                    <div style={orderHeaderStyle}>
-                      <div>
-                        <span style={orderIdStyle}>{order.id.substring(0, 8)}</span>
-                        <span style={orderDateStyle}>
-                          Ordered on {new Date(order.orderDate).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div style={{
-                        ...orderStatusStyle,
-                        color: order.status === 'completed' ? '#4caf50' : '#ff9800'
-                      }}>
-                        {order.status}
-                      </div>
+                {!isEditing ? (
+                  // Display Mode
+                  <>
+                    <div style={infoRowStyle}>
+                      <div style={infoLabelStyle}>Username</div>
+                      <div style={infoValueStyle}>{userData?.username || 'Not set'}</div>
                     </div>
-                    {order.items && order.items.length > 0 ? (
-                      <div style={orderItemsContainerStyle}>
-                        {order.items.map((item, index) => (
-                          <div key={index} style={orderItemStyle}>
-                            <div style={itemNameStyle}>{item.name || 'Unknown Product'} × {item.quantity || 1}</div>
-                            <div style={itemPriceStyle}>${parseFloat(item.price || 0).toFixed(2)}</div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div style={{ color: '#aaa', padding: '16px 0' }}>
-                        No items found in this order.
-                      </div>
-                    )}
-                    {order.totalAmount !== undefined && (
-                      <div style={orderTotalStyle}>
-                        <span>Total</span>
-                        <span>${parseFloat(order.totalAmount).toFixed(2)}</span>
-                      </div>
-                    )}
+                    <div style={infoRowStyle}>
+                      <div style={infoLabelStyle}>Email</div>
+                      <div style={infoValueStyle}>{userData?.email || 'Not set'}</div>
+                    </div>
+                    <div style={infoRowStyle}>
+                      <div style={infoLabelStyle}>Phone</div>
+                      <div style={infoValueStyle}>{userData?.phone || 'Not set'}</div>
+                    </div>
+                   
                     <button 
-                      style={orderDetailBtnStyle}
-                      onClick={() => navigate(`/orders/${order.id}`)}
+                      style={editBtnStyle}
+                      onClick={handleEditClick}
                     >
-                      View Details
+                      Edit Profile
                     </button>
-                  </div>
-                ))
-              )}
+                  </>
+                ) : (
+                  // Edit Mode
+                  <form onSubmit={handleSaveProfile}>
+                    <div style={editRowStyle}>
+                      <label style={editLabelStyle}>Username</label>
+                      <input
+                        type="text"
+                        name="username"
+                        value={editForm.username}
+                        onChange={handleInputChange}
+                        style={editInputStyle}
+                        required
+                      />
+                    </div>
+                    <div style={editRowStyle}>
+                      <label style={editLabelStyle}>Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={editForm.email}
+                        onChange={handleInputChange}
+                        style={editInputStyle}
+                        required
+                      />
+                    </div>
+                    <div style={editRowStyle}>
+                      <label style={editLabelStyle}>Phone</label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={editForm.phone}
+                        onChange={handleInputChange}
+                        style={editInputStyle}
+                      />
+                    </div>
+
+                    {updateError && (
+                      <div style={{ color: '#ff5252', marginTop: 16, fontSize: 14 }}>
+                        {updateError}
+                      </div>
+                    )}
+
+                    {updateSuccess && (
+                      <div style={{ color: '#4caf50', marginTop: 16, fontSize: 14 }}>
+                        {updateSuccess}
+                      </div>
+                    )}
+
+                    <div style={editButtonsStyle}>
+                      <button
+                        type="submit"
+                        disabled={updateLoading}
+                        style={saveBtnStyle}
+                      >
+                        {updateLoading ? 'Saving...' : 'Save Changes'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelEdit}
+                        style={cancelBtnStyle}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -269,92 +324,59 @@ const editBtnStyle = {
   marginTop: 24,
   alignSelf: 'flex-start',
 };
-
-const orderCardStyle = {
-  background: '#232526',
-  borderRadius: 16,
-  padding: 24,
-  marginBottom: 24,
-  boxShadow: '0 2px 16px rgba(0, 0, 0, 0.4)',
-};
-
-const orderHeaderStyle = {
+const editRowStyle = {
   display: 'flex',
-  justifyContent: 'space-between',
-  marginBottom: 16,
-  paddingBottom: 16,
-  borderBottom: '1px solid #333',
+  flexDirection: 'column',
+  marginBottom: 20,
 };
 
-const orderIdStyle = {
-  color: '#fff',
+const editLabelStyle = {
+  color: '#ccc',
+  fontSize: 14,
   fontWeight: 600,
-  fontSize: 18,
-  marginRight: 12,
+  marginBottom: 8,
 };
 
-const orderDateStyle = {
-  color: '#aaa',
-  fontSize: 16,
-};
-
-const orderStatusStyle = {
-  fontWeight: 600,
-  fontSize: 16,
-};
-
-const orderItemsContainerStyle = {
-  margin: '16px 0',
-};
-
-const orderItemStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  padding: '8px 0',
-};
-
-const itemNameStyle = {
+const editInputStyle = {
+  background: '#181A1B',
+  border: '2px solid #333',
+  borderRadius: 8,
+  padding: '12px 16px',
   color: '#fff',
   fontSize: 16,
+  outline: 'none',
+  transition: 'border-color 0.2s',
 };
 
-const itemPriceStyle = {
-  color: '#ff9800',
-  fontSize: 16,
-  fontWeight: 600,
-};
-
-const orderTotalStyle = {
+const editButtonsStyle = {
   display: 'flex',
-  justifyContent: 'space-between',
-  padding: '16px 0',
-  borderTop: '1px solid #333',
+  gap: 12,
+  marginTop: 24,
+};
+
+const saveBtnStyle = {
+  background: 'linear-gradient(90deg, #4caf50 0%, #66bb6a 100%)',
   color: '#fff',
   fontWeight: 700,
-  fontSize: 18,
-};
-
-const orderDetailBtnStyle = {
-  background: 'transparent',
-  color: '#ff9800',
-  border: '2px solid #ff9800',
+  border: 'none',
   borderRadius: 8,
-  padding: '8px 16px',
-  fontSize: 14,
+  padding: '10px 24px',
+  fontSize: 16,
   cursor: 'pointer',
-  marginTop: 8,
-  fontWeight: 600,
+  transition: 'filter 0.2s',
 };
 
-const emptyStateStyle = {
-  color: '#aaa',
-  textAlign: 'center',
-  padding: '32px',
-  background: '#232526',
-  borderRadius: 16,
-  fontSize: 18,
+const cancelBtnStyle = {
+  background: 'transparent',
+  color: '#ff5252',
+  fontWeight: 700,
+  border: '2px solid #ff5252',
+  borderRadius: 8,
+  padding: '10px 24px',
+  fontSize: 16,
+  cursor: 'pointer',
+  transition: 'all 0.2s',
 };
-
 // Styles for the unauthenticated user view
 const unauthContainerStyle = {
   padding: '64px 24px',

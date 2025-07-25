@@ -177,10 +177,66 @@ const profile = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const { username, email, phone } = req.body;
+    const userId = req.user.id;
+
+    if (username || email) {
+      const whereConditions = [];
+      if (username) whereConditions.push({ username });
+      if (email) whereConditions.push({ email });
+
+      const existingUser = await User.findOne({
+        where: {
+          [Sequelize.Op.and]: [
+            { id: { [Sequelize.Op.ne]: userId } },
+            { [Sequelize.Op.or]: whereConditions }
+          ]
+        }
+      });
+
+      if (existingUser) {
+        const conflictField = existingUser.username === username ? 'username' : 'email';
+        return res.status(400).json({ 
+          error: `A user already exists with this ${conflictField}` 
+        });
+      }
+    }
+
+    const updateData = {};
+    if (username !== undefined) updateData.username = username;
+    if (email !== undefined) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No fields provided to update' });
+    }
+
+    await User.update(updateData, {
+      where: { id: userId }
+    });
+
+    const updatedUser = await User.findByPk(userId, {
+      attributes: ['id', 'username', 'email', 'phone']
+    });
+
+    return res.status(200).json({
+      message: 'Profile updated successfully',
+      user: updatedUser
+    });
+
+  } catch (error) {
+    console.error('Profile update error:', error);
+    return res.status(500).json({ error: 'Failed to update profile' });
+  }
+};
+
 module.exports = {
   register,
   login,
   refreshToken,
   logout,
-  profile
+  profile,
+  updateProfile
 };
